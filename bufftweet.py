@@ -10,15 +10,15 @@ import argparse
 import time
 
 
-def add_to_buffer(user):
-
+def add_to_buffer():
+	print "Press Enter to stop Storing tweets!"
 	while True:
 		tweeter = raw_input("enter your tweet: ")
 		
 		if tweeter!="":
 			date=datetime.date.today().strftime("%d %m %Y")
 			time=datetime.datetime.now().time().strftime("%H %M %S")
-			buffer_path='dbase/'+user+'_buff.db'
+			buffer_path='dbase/buff.db'
 	
 			conn = sqlite3.connect(buffer_path)
 			c = conn.cursor()
@@ -48,7 +48,7 @@ def get_last():
 	print c.fetchone()
 
 def del_post(t):
-	conn = sqlite3.connect('dbase/subho_buff.db')
+	conn = sqlite3.connect('dbase/buff.db')
 	c = conn.cursor()
 	
 	c.execute('DELETE FROM tweets WHERE tweet=?',t)
@@ -57,8 +57,18 @@ def del_post(t):
 	#print "post deleted"
 	conn.close()
 
+def delete(t):
+	conn = sqlite3.connect('dbase/buff.db')
+	c = conn.cursor()
+	
+	c.execute('DELETE FROM tweets WHERE Id=?',t)
+
+	conn.commit()
+	print "Tweet Deleted Successfully!!"
+	conn.close()
+
 def post():
-	conn = sqlite3.connect('dbase/subho_buff.db')
+	conn = sqlite3.connect('dbase/buff.db')
 	c = conn.cursor()
 	
 	
@@ -75,7 +85,7 @@ def getuser():
 	t='1'
 	c.execute('SELECT author FROM credentials WHERE Id=?',t)
 	for row in c.fetchone():
-		return row
+		return row.encode("utf-8")
 	#print b
 
 def get_cred():
@@ -94,16 +104,10 @@ def login(consumer_key,consumer_secret,auth_key,auth_secret,token):
 	api=tweepy.API(auth)
 	#print "Authenticated!!"
 	return api
-	'''
-	update=post()
-	else:
-		update=if(bool(api.update_status(update))):
-		print "Status updated successfully!!!"
-	'''
-#def updater(api):
+
 	
 def buff_disp():
-	conn = sqlite3.connect('dbase/subho_buff.db')
+	conn = sqlite3.connect('dbase/buff.db')
 	c = conn.cursor()
 	
 	t=('1',)
@@ -113,7 +117,7 @@ def buff_disp():
 	conn.close()
 
         
-def createDaemon(choice):
+def createDaemon(choice,timeout):
     if choice=="start":
     	
 		try:
@@ -126,7 +130,7 @@ def createDaemon(choice):
 		except OSError, error:
 			print 'Unable to fork. Error: %d (%s)' % (error.errno, error.strerror)
 			os._exit(1)
-		posting()
+		posting(timeout)
     
     elif choice == 'stop':
         with open('pidinfo', 'r') as pid:
@@ -136,7 +140,7 @@ def createDaemon(choice):
         pass
 
 
-def posting():
+def posting(t):
     while True:
 		user,con_key,con_secret,auth_key,auth_sec=get_cred()
 		user=user.encode("utf-8")
@@ -145,7 +149,6 @@ def posting():
 		auth_sec=auth_sec.encode("utf-8")
 		con_key=con_key.encode("utf-8")
 		con_secret==con_secret.encode("utf-8")
-		token="daemon"
 		j=post()
 			
 		
@@ -156,7 +159,24 @@ def posting():
 	
 
 
-		time.sleep(60)
+		time.sleep(t*60)
+
+
+def direct_post(update):
+		user,con_key,con_secret,auth_key,auth_sec=get_cred()
+		user=user.encode("utf-8")
+		#print user 
+		auth_key=auth_key.encode("utf-8")
+		auth_sec=auth_sec.encode("utf-8")
+		con_key=con_key.encode("utf-8")
+		con_secret==con_secret.encode("utf-8")
+		
+			
+		
+		api=login(con_key,con_secret,auth_key,auth_sec,token)
+		api.update_status(update)
+		print("Tweet Posted Successfully")
+
 
 
 
@@ -170,32 +190,29 @@ def main():
 	parser.add_argument('-off', '--stop', action='store_true', help="stop posting")
 	parser.add_argument('-p', '--post' , help="posts tweets instantly")
 	parser.add_argument('-d', '--display' , action="store_true", help="menu mode")
-
+	parser.add_argument('-t', '--time', type=int, default=60, help="set time interval")
+	parser.add_argument('-del', '--delete', help="delete tweet")
 	
 	args = parser.parse_args()
 
 	if args.start==True:
-		createDaemon("start")
+		createDaemon("start",args.time)
 	
 	elif args.stop==True:
-		createDaemon("stop")
-		#if daemon off
-		#	error
-		#else:
-		#	stop daemon
+		createDaemon("stop",0)
+		
 	elif args.post!=None:
-		print "start"#if daemon on
-		#authenticate then post
+		direct_post(args.post)
 	
 	elif args.store==True:
-		add_to_buffer('subho')
-		buff_disp()
-	
+		add_to_buffer()
+
 	elif args.display==True:
 		buff_disp()
-		#display menu
+	
+	elif args.delete!=None:
+		delete((args.delete).decode("utf-8"))
 	else:
-
 		os.system("python bufftweet.py -h")
 		
 

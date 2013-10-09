@@ -83,7 +83,7 @@ def create_cred():
 
 	c.execute("INSERT INTO credentials VALUES (null,?,?,?,?,?,?)",(author,con_key,con_secret,auth_key,auth_secret,0))
 	
-	buffer_path='dbase/'+author+'_buff.db'
+	buffer_path='dbase/buff.db'
 	# Save (commit) the changes
 	conn.commit()
 
