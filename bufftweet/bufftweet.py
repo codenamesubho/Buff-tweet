@@ -1,7 +1,7 @@
 import tweepy
 #from ipdb import set_trace
 import sys
-import os 
+import os
 import datetime
 import time
 from . import config,db
@@ -9,7 +9,7 @@ from models import User,TweetStore
 import sqlalchemy
 
 class TweepyHandler(object):
-    
+
     def __init__(self,kwargs):
         self.consumer_key = config.CONSUMER_KEY
         self.consumer_secret = config.CONSUMER_SECRET
@@ -23,11 +23,11 @@ class TweepyHandler(object):
         #print "Authenticated!!"
 
     def post(self,update):
-        #self.api.update_status(status=update)
-        sys.stderr.write("status = "+update)
+        self.api.update_status(status=update)
+        #sys.stderr.write("status = "+update)
         print("Tweet Posted Successfully")
 
-    
+
 
 class DbHandler(object):
 
@@ -35,16 +35,14 @@ class DbHandler(object):
         self.db = db
 
 
-    
-    def get_cred(self):
+def get_cred(self):
         try:
             user = self.db.query(User).first()
             return {'AUTH_KEY': user.auth_key, 'AUTH_SECRET' : user.auth_secret}
         except AttributeError:
             print "No user found,register first"
             sys.exit(1)
-        
-    
+
     def store_tweet(self):
         print "Press Enter to stop Storing tweets!"
         tweet_obj = []
@@ -84,9 +82,9 @@ class DbHandler(object):
             print "No tweets saved, add new tweets"
         for tweet in tweet_list:
             print "{id}) \t\t {tweet} \t\t {created}".format(id=tweet.id,tweet=tweet.tweet,created=tweet.created)
-        
+
 class Tweetdaemon(object):
-    
+
     def __init__(self,time=1):
         self.t=time
         self.name="bufftweet"
@@ -95,11 +93,11 @@ class Tweetdaemon(object):
         self.stdout_path = '/var/tmp/%s.log' % self.name
         self.stderr_path = '/var/tmp/%s.log' % self.name
         self.pidfile_timeout = 5
-        
+
     def initialize(self):
         self.DB = DbHandler()
         self.API= TweepyHandler(self.DB.get_cred())
-    
+
     def safe_close_db(self):
         self.DB.db.close()
 
@@ -111,11 +109,6 @@ class Tweetdaemon(object):
             if status is not None:
                 self.API.post(status.tweet)
                 self.DB.del_post(tweet=status.tweet)
-            """
-            import sys
-            sys.stderr.write("Hello "+str(i))
-            i+=1
-            """
             time.sleep(self.t*60)
-            
+
 
