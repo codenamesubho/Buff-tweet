@@ -35,7 +35,7 @@ class DbHandler(object):
         self.db = db
 
 
-def get_cred(self):
+    def get_cred(self):
         try:
             user = self.db.query(User).first()
             return {'AUTH_KEY': user.auth_key, 'AUTH_SECRET' : user.auth_secret}
